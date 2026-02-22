@@ -1,18 +1,18 @@
 resource "dynatrace_document" "modern_trial_dashboard" {
-  name = "[CapMon] Terraform Modern Dashboard"
-  type = "dashboard" # This tells Dynatrace it's a dashboard, not a notebook
+  name = "General Dashboard"
+  type = "dashboard"
   content = jsonencode({
     version   = 1
     variables = []
     tiles = {
       "1" = {
         type    = "markdown"
-        content = "## Managed by Terraform\nThis is a modern 2026 dashboard."
+        content = "## General Dashboard"
       }
       "2" = {
         type          = "data"
         title         = "Host CPU Usage"
-        query         = "fetch builtin:host.cpu.usage | summarize avg(value)"
+        query         = "timeseries avg(dt.host.cpu.usage), by:{dt.entity.host}"
         visualization = "lineChart"
       }
     }

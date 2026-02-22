@@ -1,0 +1,36 @@
+
+
+dt.host.cpu.usage
+Represents total CPU usage on a host.
+Includes all CPU time consumed by:
+	User processes
+	System/kernel processes
+	I/O wait, interrupts, etc. (depending on OS)
+Basically: dt.host.cpu.usage ≈ 100% - idle
+Good for overall CPU load monitoring.
+
+dt.host.cpu.user
+Represents CPU time spent in user space only.
+Counts only time the CPU spends running application processes (non-kernel).
+Excludes:
+	Kernel/system CPU time
+	I/O wait or idle
+Useful for analyzing application load specifically, ignoring OS/system overhead.
+
+
+Custom Metric‑Based Alert
+Dynatrace’s Terraform provider exposes a metric event resource (e.g., dynatrace_metric_events) that lets you define a custom alert on metric thresholds. This is the Terraform equivalent of “Custom Alerts” in the UI.
+
+Alerting Profile with a Custom Event Filter
+A more advanced route is to define an alerting profile that uses custom event filtering (e.g., by event title or description) so that only certain events are notified:
+This profile filters incoming events and can route them with severity or to notification settings.
+
+
+In the dynatrace_email_notification resource, the profile attribute is the link between your notification channel and the rules that trigger it.
+What it does
+It tells Dynatrace: "Send an email only when a problem matches the conditions defined in this specific Alerting Profile."
+
+
+
+
+> terraform providers schema -json > schema.json

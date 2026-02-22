@@ -1,2 +1,7 @@
-.env
-token.txt
+.terraform
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+
+# Sensitive files
+*.tfvars
