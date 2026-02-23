@@ -1,53 +1,96 @@
-resource "dynatrace_metric_events" "cpu_high_usage" {
-  summary = "CPU usage above 50% for 5m"
-  enabled = true
+resource "dynatrace_davis_anomaly_detectors" "cpu_high_usage" {
+  title       = "High CPU usage"
+  description = "High CPU usage"
+  enabled     = true
+  source      = "Terraform"
 
-  query_definition {
-    type        = "METRIC_KEY"
-    metric_key  = "builtin:host.cpu.usage"
-    aggregation = "AVG"
-  }
+  analyzer {
+    name = "dt.statistics.ui.anomaly_detection.StaticThresholdAnomalyDetectionAnalyzer"
 
-  model_properties {
-    type               = "STATIC_THRESHOLD"
-    threshold          = 50
-    alert_condition    = "ABOVE"
-    violating_samples  = 3
-    samples            = 5
-    dealerting_samples = 5
-    alert_on_no_data   = false
-  }
-
-
-  event_template {
-    title       = "CPU usage above 50% for 5m"
-    description = "CPU usage above 50% for 5m"
-    event_type  = "CUSTOM_ALERT"
-    davis_merge = true
-  }
-}
-
-resource "dynatrace_alerting_profile" "notify_custom_alerts" {
-  display_name = "Notify Custom CPU Alerts"
-
-  event_type_filters {
-    custom_event_filter {
-      custom_title_filter {
-        operator         = "CONTAINS"
-        value            = "High CPU"
-        case_insensitive = true
+    input {
+      analyzer_input_field {
+        key   = "query"
+        value = "timeseries avg(dt.host.cpu.usage)"
+      }
+      analyzer_input_field {
+        key   = "alertCondition"
+        value = "ABOVE"
+      }
+      analyzer_input_field {
+        key   = "threshold"
+        value = "10"
+      }
+      analyzer_input_field {
+        key   = "violatingSamples"
+        value = "3"
+      }
+      analyzer_input_field {
+        key   = "slidingWindow"
+        value = "5"
+      }
+      analyzer_input_field {
+        key   = "dealertingSamples"
+        value = "5"
       }
     }
   }
+
+  event_template {
+    properties {
+      property {
+        key   = "event.name"
+        value = "High CPU usage"
+      }
+      property {
+        key   = "event.description"
+        value = "The {metricname} value of {alert_condition} {threshold} was detected on {entityname}"
+      }
+      property {
+        key   = "event.type"
+        value = "CUSTOM_ALERT"
+      }
+    }
+  }
+
+  execution_settings {
+    query_offset = 1
+  }
 }
 
-resource "dynatrace_email_notification" "email_alerts" {
-  name                   = "Email Alerts"
-  active                 = true
-  profile                = dynatrace_alerting_profile.notify_custom_alerts.id
-  to                     = ["admin@example.com"]
-  subject                = "Dynatrace Alert: {ProblemTitle}"
-  body                   = "Problem description: {ProblemDetailsText}"
-  notify_closed_problems = true
-}
 
+
+resource "dynatrace_automation_workflow" "email_alerts_workflow" {
+  title       = "Notify Custom CPU Alerts Workflow"
+  description = "Triggered by CPU usage problem"
+
+  trigger {
+    event {
+      active = true
+      config {
+        davis_problem {
+          categories {
+            custom = true
+          }
+        }
+      }
+    }
+  }
+
+  tasks {
+    task {
+      name        = "send_email"
+      description = "Send email notification"
+      action      = "dynatrace.email:send-email"
+      active      = true
+      position {
+        x = 0
+        y = 1
+      }
+      input = jsonencode({
+        body    = "Problem description: {{event()['event.description']}}"
+        subject = "Dynatrace Alert: {{ event()['event.name'] }}"
+        to      = ["rojbenimohamed@gmail.com"]
+      })
+    }
+  }
+}

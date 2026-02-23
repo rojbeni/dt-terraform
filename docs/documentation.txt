@@ -21,14 +21,31 @@ Useful for analyzing application load specifically, ignoring OS/system overhead.
 Custom Metric‑Based Alert
 Dynatrace’s Terraform provider exposes a metric event resource (e.g., dynatrace_metric_events) that lets you define a custom alert on metric thresholds. This is the Terraform equivalent of “Custom Alerts” in the UI.
 
+Static Threshold Anomaly Detection analyzer within the dynatrace_davis_anomaly_detectors resource. 
+This tells Dynatrace exactly what metric to monitor and the rules for when to trigger an alert.
+Here is a breakdown of what each analyzer_input_field accomplishes:
+
+query = "timeseries avg(dt.host.cpu.usage)" This is the metric query. It continuously fetches the time series data for the average CPU usage (dt.host.cpu.usage) across your monitored hosts.
+alertCondition = "ABOVE" This specifies the condition for triggering the alert. It tells Dynatrace to look for instances where the CPU usage is greater than the threshold.
+threshold = "10" This is the actual limit that the metric is compared against. If the CPU usage goes above 10%, it becomes a candidate for an alert. (Note: 10% is a very low threshold for CPU usage and would likely trigger frequently, but that is what is configured here).
+slidingWindow = "5" and violatingSamples = "3" These two settings work together to prevent false positives from momentary spikes. Dynatrace will look at a 5-minute sliding window of data. An alert will only trigger if at least 3 out of the 5 minutes (samples) within that window violate the threshold (i.e., go above 10%).
+dealertingSamples = "5" This determines when the alert should be resolved (closed). The problem will only be automatically closed after 5 consecutive samples show the CPU usage has fallen entirely back below the threshold.
+
+
+
+
+
+
+
+
+
 Alerting Profile with a Custom Event Filter
 A more advanced route is to define an alerting profile that uses custom event filtering (e.g., by event title or description) so that only certain events are notified:
 This profile filters incoming events and can route them with severity or to notification settings.
-
-
 In the dynatrace_email_notification resource, the profile attribute is the link between your notification channel and the rules that trigger it.
 What it does
 It tells Dynatrace: "Send an email only when a problem matches the conditions defined in this specific Alerting Profile."
+
 
 
 
